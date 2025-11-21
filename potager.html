@@ -1,0 +1,1848 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon Planificateur de Potager PRO (Rotation & Lignes) V6</title>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-green: #2e7d32;
+            --hover-green: #1b5e20;
+            --soil-color: #8D6E63;
+            --bg-light: #f8f9fa;
+            --text-dark: #2c3e50;
+            --color-red: #e74c3c;
+            --color-blue: #3498db;
+            --color-yellow: #f1c40f;
+            --barrier-color: #616161; /* Gris foncé pour les barrières */
+            --jachere-color: #A4C6A4; /* Vert clair pour la jachère */
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg-light);
+            margin: 0;
+            padding: 20px;
+            color: var(--text-dark);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* Header Pro */
+        .app-header {
+            background: white;
+            width: 100%;
+            max-width: 1200px;
+            padding: 15px 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            margin-bottom: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: flex-start;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-green);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        /* Conteneur principal */
+        .main-container {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        .info-bar {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #e8f5e9;
+            border-left: 4px solid var(--primary-green);
+            border-radius: 4px;
+            color: var(--primary-green);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .info-bar.history-tip {
+             background: #f0f8ff;
+             border-left-color: var(--color-blue);
+             color: var(--color-blue);
+        }
+
+        /* OUTILS DE DESSIN */
+        .drawing-tools {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .drawing-tools button {
+            padding: 10px 15px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s, border-color 0.2s;
+        }
+        
+        .drawing-tools button.active {
+            background: var(--primary-green);
+            color: white;
+            border-color: var(--primary-green);
+        }
+        
+        #toggleDrawModeBarrier {
+            background: var(--barrier-color);
+            color: white;
+            border-color: var(--barrier-color);
+        }
+
+        /* ZONE STATISTIQUES GLOBALES */
+        .stats-summary {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f4f4f4;
+            border-radius: 8px;
+        }
+        .stat-card {
+            text-align: center;
+            padding: 10px 20px;
+            border-right: 1px solid #ddd;
+        }
+        .stat-card:last-child {
+            border-right: none;
+        }
+        .stat-card strong {
+            display: block;
+            font-size: 1.5rem;
+            color: var(--primary-green);
+        }
+        .stat-card small {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        /* NOUVELLE DISPOSITION FLEXIBLE */
+        .garden-layout {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+        }
+
+        /* ZONE DE DESSIN (Canvas) */
+        #garden-canvas {
+            flex: 2; /* Le potager prend plus d'espace */
+            min-width: 60%;
+            height: 600px; 
+            background-color: var(--soil-color);
+            background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23000000' fill-opacity='0.05' fill-rule='evenodd'%3E%3Cpath d='M0 40L40 0H20L0 20M40 40V20L20 40'/%3E%3C/g%3E%3C/path%3E%3C/svg%3E");
+            border-radius: 12px;
+            border: 8px solid #6D4C41; 
+            position: relative;
+            cursor: crosshair;
+            overflow: hidden;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.3);
+            user-select: none;
+        }
+
+        /* LES PLANCHES DESSINÉES */
+        .garden-element {
+            position: absolute;
+            box-shadow: 3px 3px 10px rgba(0,0,0,0.3);
+            font-size: 14px;
+            overflow: hidden;
+            word-break: break-word;
+            border-radius: 4px;
+            transition: transform 0.1s, box-shadow 0.1s;
+            user-select: none;
+        }
+        
+        /* Styles pour les planches de culture (BED) */
+        .garden-bed {
+            border: 2px solid rgba(255, 255, 255, 0.7);
+            color: white;
+            font-weight: 700;
+            display: flex;
+            flex-direction: column; 
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 8px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            line-height: 1.2;
+            cursor: pointer;
+            background-color: transparent; /* Nécessaire pour le motif */
+        }
+
+        .garden-bed:hover {
+             transform: scale(1.02);
+             z-index: 100;
+             border-color: white;
+             box-shadow: 5px 5px 15px rgba(0,0,0,0.4);
+        }
+
+        /* Style spécifique pour la JACHÈRE (Hachuré) */
+        .garden-bed.is-jachere {
+            background-color: var(--jachere-color) !important;
+            background-image: linear-gradient(45deg, rgba(255,255,255,.2) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.2) 50%, rgba(255,255,255,.2) 75%, transparent 75%, transparent);
+            background-size: 15px 15px;
+        }
+        
+        /* Le contenu de la planche doit être transparent si la planche est hachurée (pour laisser voir le hachurage) */
+        .garden-bed.is-jachere .bed-content {
+            background-color: transparent !important;
+        }
+
+        .garden-bed .bed-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        /* Styles pour les BARRIÈRES (LIGNES) */
+        .garden-line {
+            position: absolute;
+            height: 5px; /* Épaisseur de la ligne */
+            background-color: var(--barrier-color);
+            border-radius: 2px;
+            transform-origin: 0 0; /* Important pour la rotation */
+            box-shadow: 1px 1px 5px rgba(0,0,0,0.4);
+            cursor: grab;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 10px;
+            color: white;
+            padding: 0 10px;
+        }
+        
+        .garden-line:hover {
+            opacity: 0.8;
+            cursor: grab;
+        }
+
+        /* Poignées de redimensionnement/déplacement pour les lignes */
+        .line-handle {
+            width: 12px;
+            height: 12px;
+            background: var(--primary-green);
+            border: 2px solid white;
+            position: absolute;
+            border-radius: 50%;
+            z-index: 150;
+            cursor: grab;
+        }
+        /* Ajustements de position pour que les poignées soient centrées sur la ligne de 5px */
+        .line-handle.start { left: -6px; top: -3.5px; } 
+        .line-handle.end { right: -6px; top: -3.5px; }
+
+        /* Le rectangle fantôme */
+        #ghost-rect {
+            position: absolute;
+            border: 2px dashed rgba(255,255,255,0.8);
+            background-color: rgba(255, 255, 255, 0.2);
+            pointer-events: none;
+            display: none;
+            z-index: 50;
+        }
+        
+        /* Resizer styles pour les planches (BED) */
+        .resizer {
+            width: 12px;
+            height: 12px;
+            background: white;
+            border: 2px solid var(--primary-green);
+            position: absolute;
+            z-index: 150;
+            border-radius: 50%;
+            opacity: 0.8;
+        }
+        .resizer.bottom-right { bottom: -6px; right: -6px; cursor: nwse-resize; }
+        .resizer.bottom-left { bottom: -6px; left: -6px; cursor: nesw-resize; }
+        .resizer.top-right { top: -6px; right: -6px; cursor: nesw-resize; }
+        .resizer.top-left { top: -6px; left: -6px; cursor: nwse-resize; }
+
+        /* --- MODAL STYLING (FENÊTRE MODIFICATION) --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: none; 
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            width: 350px;
+            display: flex;
+            flex-direction: column;
+            max-height: 90vh; 
+            overflow-y: auto; 
+        }
+
+        .modal-content h4 {
+            margin-top: 0;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .modal-content label {
+            font-weight: 600;
+            margin-top: 10px;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .modal-content input:not([type="color"]):not([type="radio"]):not([type="checkbox"]), 
+        .modal-content select, 
+        .modal-content textarea {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 100%;
+            box-sizing: border-box;
+            margin-top: 5px;
+        }
+
+        .modal-content textarea {
+            min-height: 80px;
+        }
+        
+        .icon-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .icon-selector input[type="radio"] {
+            display: none;
+        }
+        
+        .icon-selector label {
+            cursor: pointer;
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 1.2rem;
+            transition: all 0.2s;
+            margin-top: 0;
+        }
+        
+        .icon-selector input[type="radio"]:checked + label {
+            background-color: var(--primary-green);
+            color: white;
+            border-color: var(--primary-green);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .modal-actions button {
+            padding: 10px 15px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            flex-grow: 1;
+            transition: background 0.2s;
+        }
+
+        #saveBtn, #saveBarrierBtn {
+            background: var(--primary-green);
+            color: white;
+        }
+        #saveBtn:hover, #saveBarrierBtn:hover {
+            background: var(--hover-green);
+        }
+
+        .new-culture {
+            background: var(--color-blue);
+            color: white;
+        }
+        .new-culture:hover {
+            background: #2980b9;
+        }
+
+        .delete {
+            background: var(--color-red);
+            color: white;
+        }
+        .delete:hover {
+            background: #c0392b;
+        }
+
+        .cancel {
+            background: #ccc;
+            color: var(--text-dark);
+        }
+        .cancel:hover {
+            background: #bbb;
+        }
+
+        .modal-stats {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .input-group input {
+            flex-grow: 1;
+        }
+        .unit-select select {
+            width: auto;
+            min-width: 100px;
+        }
+        
+        /* Styles pour la modale BARRIER (Ligne) */
+        #barrierModal .modal-content {
+            width: 300px;
+        }
+
+        /* Styles pour l'historique et le calendrier */
+        #planningCalendar, #rotationAdvice, .sidebar {
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            flex: 1;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        #planningCalendar h3, #rotationAdvice h3 {
+            color: var(--primary-green);
+            margin-top: 0;
+            padding-bottom: 5px;
+            border-bottom: 1px dashed #eee;
+        }
+
+        #calendarList, #historyList {
+            list-style: none;
+            padding: 0;
+        }
+
+        .calendar-item, .history-item {
+            padding: 10px;
+            margin-bottom: 8px;
+            background: #f9f9f9;
+            border-radius: 4px;
+            border-left: 5px solid #ccc;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .calendar-item strong, .history-item-header {
+            font-size: 1rem;
+            margin-bottom: 2px;
+        }
+        
+        .advice-item {
+            padding: 8px;
+            border-left: 4px solid #ccc;
+            margin: 5px 0;
+            background: #fcfcfc;
+            border-radius: 4px;
+        }
+        .advice-ok { border-color: var(--primary-green); color: var(--primary-green); font-weight: 600; }
+        .advice-warning { border-color: var(--color-yellow); color: var(--color-yellow); font-weight: 600; }
+        .advice-danger { border-color: var(--color-red); color: var(--color-red); font-weight: 600; }
+        
+        /* Jachère Checkbox */
+        .jachere-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+            padding: 10px;
+            background: #efffef;
+            border: 1px solid var(--primary-green);
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .jachere-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+        }
+        .jachere-group label {
+            margin: 0;
+            cursor: pointer;
+            font-weight: 700;
+            color: var(--primary-green);
+        }
+
+    </style>
+</head>
+<body>
+
+    <header class="app-header">
+        <div class="logo">
+            <i class="ri-plant-fill"></i> Mon Potager Pro
+        </div>
+        
+        <div class="stats-summary" id="statsSummary">
+            </div>
+
+    </header>
+
+    <div class="main-container">
+        
+        <div class="drawing-tools">
+             <button id="toggleDrawMode" class="active" data-mode="bed">
+                <i class="ri-seedling-line"></i> Dessiner une Planche
+            </button>
+            <button id="toggleDrawModeBarrier" data-mode="barrier">
+                <i class="ri-ruler-line"></i> Tracer une Barrière/Allée (Ligne)
+            </button>
+        </div>
+        
+        <div class="info-bar history-tip">
+            <i class="ri-information-fill"></i>
+            <span>**Clique simple** sur une planche pour voir son historique de rotation. **Double-clic** pour éditer.</span>
+        </div>
+
+        <div class="filter-controls">
+            <label for="dateFilter">Voir le potager au :</label>
+            <input type="date" id="dateFilter">
+        </div>
+
+        <div class="garden-layout"> 
+            <div id="garden-canvas">
+                <div id="ghost-rect"></div>
+            </div>
+            
+            <div class="sidebar-container">
+                <div id="planningCalendar">
+                    <h3>🗓️ Échéancier Futur</h3>
+                    <ul id="calendarList">
+                        </ul>
+                </div>
+
+                <div id="rotationAdvice">
+                    <h3>♻️ Recommandation de Rotation</h3>
+                    <div id="adviceContent">
+                        <p>Sélectionnez une planche pour afficher les conseils de rotation.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="editModal" class="modal-overlay">
+        <div class="modal-content">
+            <h4>Modifier la Planche de Culture</h4>
+            <input type="hidden" id="modalBedId">
+            <input type="hidden" id="modalIconValue"> 
+            <input type="hidden" id="modalLocationKey"> 
+            
+            <label for="modalName">Nom de la culture :</label>
+            <input type="text" id="modalName">
+            
+            <div class="jachere-group">
+                <input type="checkbox" id="modalIsJachere">
+                <label for="modalIsJachere">Jachère active / Engrais Vert</label>
+            </div>
+            
+            <label for="modalFamily">Famille de culture :</label>
+            <select id="modalFamily">
+                </select>
+            
+            <label for="modalVariety">Variété :</label>
+            <input type="text" id="modalVariety" placeholder="Ex: Cœur de Bœuf">
+
+            <label for="modalColor">Couleur :</label>
+            <input type="color" id="modalColor" value="#4CAF50">
+
+            <label>Icône de culture :</label>
+            <div id="iconSelector" class="icon-selector">
+                </div>
+
+            <label for="modalSeedsPlants">Qté de semences / plants :</label>
+            <input type="number" id="modalSeedsPlants" min="0" placeholder="Nombre de pieds, grammes, etc.">
+
+            <label for="modalPlantingDate">Date de plantation :</label>
+            <input type="date" id="modalPlantingDate">
+
+            <label for="modalHarvestDate">Date d'arrachage prévue :</label>
+            <input type="date" id="modalHarvestDate">
+            
+            <label for="modalStage">Étape de Culture Actuelle :</label>
+            <select id="modalStage">
+                </select>
+            
+            <label for="modalHarvestedQuantity">Récolte réelle :</label>
+            <div class="input-group">
+                <div>
+                    <input type="number" id="modalHarvestedQuantity" min="0" placeholder="Quantité">
+                </div>
+                <div class="unit-select">
+                    <select id="modalUnit">
+                        </select>
+                </div>
+            </div>
+
+            <label for="modalNotes">Notes de culture :</label>
+            <textarea id="modalNotes" placeholder="Performance, fertilisation, problèmes..."></textarea>
+            
+            <div class="modal-stats">
+                Dimensions (pixels) : <span id="modalDimensions"></span>
+            </div>
+            
+            <div class="modal-actions">
+                <button id="saveBtn">Sauvegarder</button>
+                <button id="newCultureBtn" class="new-culture">Nouvelle Culture (Archiver)</button> 
+                <button id="deleteBtn" class="delete">Supprimer</button>
+                <button id="closeModalBtn" class="cancel">Annuler</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="barrierModal" class="modal-overlay">
+        <div class="modal-content">
+            <h4>Modifier la Barrière/Allée</h4>
+            <input type="hidden" id="modalBarrierId">
+            <label for="modalBarrierName">Nom de la Barrière :</label>
+            <input type="text" id="modalBarrierName" placeholder="Ex: Allée centrale">
+            <div class="modal-stats">
+                Longueur (pixels) : <span id="modalBarrierLength"></span>
+            </div>
+            <div class="modal-actions">
+                <button id="saveBarrierBtn">Sauvegarder</button>
+                <button id="deleteBarrierBtn" class="delete">Supprimer</button>
+                <button id="closeBarrierModalBtn" class="cancel">Annuler</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="historyModal" class="modal-overlay">
+        <div class="modal-content">
+            <h4 id="historyTitle">Historique de la Planche</h4>
+            <ul id="historyList">
+                </ul>
+            <div class="modal-actions">
+                <button id="closeHistoryBtn" class="cancel">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        /* ======================================= */
+        /* --- LOGIQUE JAVASCRIPT --- */
+        /* ======================================= */
+
+        // 1. ÉTAT DE L'APPLICATION (La mémoire)
+        let appState = {
+            allBeds: [], 
+            drawMode: 'bed' // 'bed' ou 'line'
+        };
+
+        // Données d'icônes, de familles et unités
+        const ICON_MAP = {
+            'Carotte 🥕': 'ri-carrot-line',
+            'Tomate 🍅': 'ri-plant-line',
+            'Laitue 🥬': 'ri-leaf-line',
+            'Fleur 🌸': 'ri-flower-line',
+            'Graine 🌱': 'ri-seedling-line',
+            'Ail 🧄': 'ri-onion-line',
+            'Fruit 🍎': 'ri-apple-line',
+            'Jachère': 'ri-grass-line' 
+        };
+        
+        // --- FAMILLES DE CULTURE (Pour le sélecteur) ---
+        const CROP_FAMILIES = {
+            '': '--- Famille (Rotation) ---',
+            'Solanacées': 'Tomates, Poivrons, Aubergines, Pommes de terre (Gourmands)',
+            'Cucurbitacées': 'Courges, Concombres, Courgettes (Gourmands)',
+            'Légumineuses': 'Haricots, Pois, Fèves (Améliorantes, Fixation N)',
+            'Alliacées': 'Ail, Oignon, Échalotes, Poireaux (Nettoyantes)',
+            'Brassicacées': 'Choux, Radis, Navets, Moutarde',
+            'Astéracées': 'Laitues, Chicorées, Artichauts',
+            'Chénopodiacées': 'Bettes, Épinards',
+            'Ombellifères': 'Carottes, Céleris, Persil',
+            'Autre': 'Culture ne nécessitant pas de rotation stricte' 
+        };
+        
+        const JACHERE_FAMILY_KEY = 'Jachère/Engrais Vert'; // Clé interne pour la rotation
+
+        // --- RÈGLES DE ROTATION (4 ans) ---
+        const ROTATION_RULES = {
+            'Solanacées': { 
+                avoid: ['Solanacées', 'Cucurbitacées', 'Brassicacées'], 
+                follow: ['Légumineuses', JACHERE_FAMILY_KEY, 'Alliacées'] 
+            },
+            'Cucurbitacées': { 
+                avoid: ['Cucurbitacées', 'Solanacées'], 
+                follow: ['Légumineuses', JACHERE_FAMILY_KEY, 'Ombellifères'] 
+            },
+            'Ombellifères': { 
+                avoid: ['Ombellifères'], 
+                follow: ['Brassicacées', 'Alliacées', 'Légumineuses', 'Astéracées'] 
+            },
+            'Brassicacées': { 
+                avoid: ['Brassicacées', 'Solanacées'], 
+                follow: ['Légumineuses', 'Astéracées', 'Ombellifères', 'Alliacées'] 
+            },
+            'Légumineuses': { 
+                avoid: ['Légumineuses'], 
+                follow: ['Solanacées', 'Cucurbitacées', 'Ombellifères', 'Brassicacées'] 
+            },
+            'Alliacées': { 
+                avoid: ['Alliacées'], 
+                follow: ['Légumineuses', 'Astéracées', 'Ombellifères', 'Chénopodiacées', 'Brassicacées'] 
+            },
+            [JACHERE_FAMILY_KEY]: { // Règle pour la jachère
+                avoid: [], 
+                follow: ['Solanacées', 'Cucurbitacées', 'Légumineuses', 'Alliacées', 'Brassicacées', 'Ombellifères', 'Astéracées', 'Chénopodiacées'] 
+            },
+            'Autre': {
+                avoid: [],
+                follow: ['Légumineuses', 'Astéracées', 'Ombellifères']
+            }
+        };
+
+        const HARVEST_UNITS = [
+            '--- Unité ---', 'kg', 'g', 'L', 'mL', 'pieds', 'têtes', 'pièces', 'mottes', 'sachets'
+        ];
+        
+        const CROP_STAGES = [
+            'Semis en place',
+            'Semis en pépinière',
+            'Plantation',
+            'Croissance',
+            'Floraison',
+            'Fructification',
+            'Récolte en cours',
+            'Arrachage/Fin'
+        ];
+
+        // Variables de dessin et redimensionnement
+        let isDrawing = false;
+        let isResizing = false;
+        let isMovingLine = false;
+        let clickTimeout = null; 
+        let startX, startY;
+        let activeElement = null; // Peut être bed ou line
+        let resizeHandleType = '';
+
+        // Éléments du DOM 
+        const canvas = document.getElementById('garden-canvas');
+        const ghostRect = document.getElementById('ghost-rect');
+        const dateFilter = document.getElementById('dateFilter');
+        const editModal = document.getElementById('editModal');
+        const modalBedId = document.getElementById('modalBedId');
+        const modalName = document.getElementById('modalName');
+        const modalIsJachere = document.getElementById('modalIsJachere'); 
+        const modalVariety = document.getElementById('modalVariety');
+        const modalFamily = document.getElementById('modalFamily');
+        const modalColor = document.getElementById('modalColor');
+        const modalIconValue = document.getElementById('modalIconValue');
+        const iconSelector = document.getElementById('iconSelector');
+        const modalSeedsPlants = document.getElementById('modalSeedsPlants');
+        const modalPlantingDate = document.getElementById('modalPlantingDate');
+        const modalHarvestDate = document.getElementById('modalHarvestDate');
+        const modalStage = document.getElementById('modalStage'); 
+        const modalHarvestedQuantity = document.getElementById('modalHarvestedQuantity');
+        const modalUnit = document.getElementById('modalUnit');
+        const modalNotes = document.getElementById('modalNotes');
+        const modalDimensions = document.getElementById('modalDimensions');
+        const historyModal = document.getElementById('historyModal');
+        const rotationAdvice = document.getElementById('rotationAdvice');
+        const adviceContent = document.getElementById('adviceContent');
+        const statsSummary = document.getElementById('statsSummary');
+        const calendarList = document.getElementById('calendarList');
+        const historyList = document.getElementById('historyList');
+        const historyTitle = document.getElementById('historyTitle');
+        const toggleDrawModeBtn = document.getElementById('toggleDrawMode');
+        const toggleDrawModeBarrierBtn = document.getElementById('toggleDrawModeBarrier');
+        const barrierModal = document.getElementById('barrierModal');
+        const modalBarrierId = document.getElementById('modalBarrierId');
+        const modalBarrierName = document.getElementById('modalBarrierName');
+        const modalBarrierLength = document.getElementById('modalBarrierLength');
+
+
+        // --- INITIALISATION et Helpers ---
+        function init() {
+            const savedData = localStorage.getItem('potagerProData');
+            if (savedData) {
+                try {
+                    const loadedData = JSON.parse(savedData);
+                    appState.allBeds = loadedData.map(item => ({
+                        ...item,
+                        type: item.type || 'bed', 
+                        isJachere: item.isJachere || (item.family === JACHERE_FAMILY_KEY), 
+                        family: item.isJachere ? '' : item.family, // Enlever la famille Jachère si c'est géré par le flag
+                        seeds_plants: item.seeds_plants || '',
+                        harvested_quantity: item.harvested_quantity || '',
+                        unit: item.unit || '',
+                        stage: item.stage || CROP_STAGES[3],
+                        notes: item.notes || '',
+                        // Pour les lignes, assurer que le champ 'points' existe
+                        points: item.type === 'line' ? item.points : undefined,
+                    }));
+                } catch (e) {
+                    appState.allBeds = []; 
+                }
+            }
+            dateFilter.value = new Date().toISOString().split('T')[0]; 
+            generateIconSelector();
+            generateFamilySelector(); 
+            generateUnitSelector(); 
+            generateStageSelector(); 
+            setupEventListeners();
+            render(); 
+        }
+        
+        function normalizeFamily(family) {
+            return family === JACHERE_FAMILY_KEY ? JACHERE_FAMILY_KEY : (family in CROP_FAMILIES ? family : 'Autre');
+        }
+        
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+
+        function generateDistance(x1, y1, x2, y2) {
+            return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+        }
+
+        function saveData() {
+            const cleanData = appState.allBeds.map(item => {
+                // Suppression des propriétés temporaires de redimensionnement
+                const { initialX, initialY, initialW, initialH, initialP0, initialP1, ...rest } = item;
+                return rest;
+            });
+            localStorage.setItem('potagerProData', JSON.stringify(cleanData));
+        }
+        
+        function getLocationKey(element) {
+             if (element.type === 'line') {
+                const p0 = element.points[0];
+                const p1 = element.points[1];
+                // Clé basée sur la position triée pour l'unicité
+                const points = [p0, p1].sort((a, b) => (a.x + a.y) - (b.x + b.y)); 
+                return `${points[0].x}_${points[0].y}_${points[1].x}_${points[1].y}_line`;
+             }
+             // Clé pour la rotation des planches
+             return `${element.x}_${element.y}_${element.w}_${element.h}_bed`;
+        }
+
+
+        // --- FONCTIONS DE MODALE/UI ---
+
+        function generateIconSelector() {
+            iconSelector.innerHTML = '';
+            Object.entries(ICON_MAP).forEach(([name, iconClass]) => {
+                const id = `icon-${iconClass}`;
+                const input = document.createElement('input');
+                input.type = 'radio';
+                input.id = id;
+                input.name = 'icon-selector';
+                input.value = iconClass;
+                
+                const label = document.createElement('label');
+                label.htmlFor = id;
+                label.innerHTML = `<i class="${iconClass}"></i> ${name}`;
+                
+                input.addEventListener('change', () => modalIconValue.value = iconClass);
+                
+                iconSelector.appendChild(input);
+                iconSelector.appendChild(label);
+            });
+        }
+        
+        function generateFamilySelector() {
+            modalFamily.innerHTML = '';
+            Object.entries(CROP_FAMILIES).forEach(([key, description]) => {
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = key || description;
+                modalFamily.appendChild(option);
+            });
+        }
+        
+        function generateUnitSelector() {
+            modalUnit.innerHTML = '';
+            HARVEST_UNITS.forEach(unit => {
+                const option = document.createElement('option');
+                option.value = unit;
+                option.textContent = unit;
+                modalUnit.appendChild(option);
+            });
+        }
+        
+        function generateStageSelector() {
+            modalStage.innerHTML = '';
+            CROP_STAGES.forEach(stage => {
+                const option = document.createElement('option');
+                option.value = stage;
+                option.textContent = stage;
+                modalStage.appendChild(option);
+            });
+        }
+
+        // Fonctions Modales de Culture (BED)
+        function openModal(bed) {
+            activeElement = bed;
+            modalBedId.value = bed.id;
+            modalName.value = bed.name;
+            modalIsJachere.checked = bed.isJachere || false;
+            modalVariety.value = bed.variety || '';
+            // Si la famille est Jachère, on remet le select à vide pour éviter la confusion
+            modalFamily.value = bed.family === JACHERE_FAMILY_KEY ? '' : bed.family || ''; 
+            modalColor.value = bed.color;
+            modalPlantingDate.value = bed.plantingDate || new Date().toISOString().split('T')[0];
+            modalHarvestDate.value = bed.harvestDate || '';
+            modalStage.value = bed.stage || CROP_STAGES[3]; 
+            modalNotes.value = bed.notes || '';
+            modalSeedsPlants.value = bed.seeds_plants || ''; 
+            modalHarvestedQuantity.value = bed.harvested_quantity || '';
+            modalUnit.value = bed.unit || HARVEST_UNITS[0]; 
+            modalDimensions.textContent = `${bed.w} x ${bed.h} px`;
+            
+            // Gestion de l'icône
+            const currentIconRadio = iconSelector.querySelector(`input[value="${bed.icon}"]`);
+            iconSelector.querySelectorAll('input[type="radio"]').forEach(radio => radio.checked = false);
+            if (currentIconRadio) {
+                currentIconRadio.checked = true;
+                modalIconValue.value = bed.icon;
+            } else {
+                modalIconValue.value = ''; 
+            }
+            editModal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            editModal.style.display = 'none';
+            activeElement = null;
+        }
+
+        // Fonctions Modales d'Historique
+        function openHistoryModal(bed) {
+            const allHistory = appState.allBeds
+                .filter(b => b.locationKey === bed.locationKey && b.type === 'bed')
+                .sort((a, b) => new Date(b.plantingDate) - new Date(a.plantingDate)); // Triage anti-chronologique
+
+            historyTitle.textContent = `Historique de rotation pour: ${bed.name || 'Planche sans nom'} (${bed.w}x${bed.h} px)`;
+            historyList.innerHTML = '';
+
+            if (allHistory.length === 0) {
+                historyList.innerHTML = '<li class="history-item">Aucun historique trouvé pour cet emplacement.</li>';
+            } else {
+                allHistory.forEach((item, index) => {
+                    // Si c'est l'entrée actuelle et qu'elle n'est pas encore finie
+                    const isCurrent = (index === 0 && !item.harvestDate); 
+
+                    const li = document.createElement('li');
+                    li.className = 'history-item';
+                    if (isCurrent) li.style.borderLeftColor = 'var(--color-blue)';
+                    
+                    const familyDisplay = item.isJachere ? JACHERE_FAMILY_KEY : normalizeFamily(item.family);
+                    const familyDescription = CROP_FAMILIES[familyDisplay] || (familyDisplay === JACHERE_FAMILY_KEY ? 'Améliorant' : 'N/A');
+
+                    li.innerHTML = `
+                        <strong class="history-item-header">${item.name || 'Culture sans nom'} ${item.variety ? `(${item.variety})` : ''}</strong>
+                        <span><i class="ri-seedling-line"></i> **Famille:** ${familyDisplay} (${familyDescription})</span>
+                        <span><i class="ri-calendar-check-line"></i> **Plantation:** ${formatDate(item.plantingDate)}</span>
+                        <span><i class="ri-calendar-close-line"></i> **Arrachage:** ${formatDate(item.harvestDate)} ${isCurrent ? '(Culture Actuelle)' : ''}</span>
+                        ${item.harvested_quantity ? `<span><i class="ri-archive-line"></i> **Récolte:** ${item.harvested_quantity} ${item.unit}</span>` : ''}
+                    `;
+                    historyList.appendChild(li);
+                });
+            }
+
+            historyModal.style.display = 'flex';
+        }
+        
+        function closeHistoryModal() {
+            historyModal.style.display = 'none';
+        }
+
+        // Fonctions Modales de Barrière (LIGNE)
+        function openBarrierModal(line) {
+            activeElement = line;
+            modalBarrierId.value = line.id;
+            modalBarrierName.value = line.name || '';
+            const { length } = calculateLineStyle(line.points[0].x, line.points[0].y, line.points[1].x, line.points[1].y);
+            modalBarrierLength.textContent = `${length.toFixed(2)} px`;
+            barrierModal.style.display = 'flex';
+        }
+
+        function closeBarrierModal() {
+            barrierModal.style.display = 'none';
+            activeElement = null;
+        }
+
+        // --- GESTION DES ÉVÉNEMENTS ---
+        function setupEventListeners() {
+            // Événements des Modales
+            document.getElementById('closeHistoryBtn').addEventListener('click', closeHistoryModal);
+            document.getElementById('saveBtn').addEventListener('click', saveModification);
+            document.getElementById('newCultureBtn').addEventListener('click', addNewCulture); 
+            document.getElementById('deleteBtn').addEventListener('click', deleteBed);
+            document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+            editModal.addEventListener('click', (e) => {
+                if (e.target === editModal) closeModal();
+            });
+            
+            // Événements des Modales de Barrière (Ligne)
+            document.getElementById('closeBarrierModalBtn').addEventListener('click', closeBarrierModal);
+            document.getElementById('saveBarrierBtn').addEventListener('click', saveBarrierModification);
+            document.getElementById('deleteBarrierBtn').addEventListener('click', deleteBarrier);
+            barrierModal.addEventListener('click', (e) => {
+                if (e.target === barrierModal) closeBarrierModal();
+            });
+
+            // Événement Filtre de Date 
+            dateFilter.addEventListener('change', render);
+            
+            // Événements de bascule de mode de dessin
+            toggleDrawModeBtn.addEventListener('click', () => setDrawMode('bed'));
+            toggleDrawModeBarrierBtn.addEventListener('click', () => setDrawMode('line'));
+            
+            // Événement d'icône (correction pour que l'icône de jachère soit forcée si cochée)
+             modalIsJachere.addEventListener('change', () => {
+                if (modalIsJachere.checked) {
+                    modalName.value = 'Jachère/Engrais Vert';
+                    modalFamily.value = '';
+                    const jachereIcon = ICON_MAP['Jachère'];
+                    modalIconValue.value = jachereIcon;
+                    iconSelector.querySelectorAll('input[type="radio"]').forEach(radio => {
+                        radio.checked = radio.value === jachereIcon;
+                    });
+                }
+            });
+
+
+            // DESSIN : Mousedown
+            canvas.addEventListener('mousedown', (e) => {
+                const targetEl = e.target.closest('.garden-element');
+                
+                // 1. Gestion du redimensionnement/déplacement des éléments existants
+                if (e.target.closest('.resizer')) {
+                    startResizeBed(e);
+                    return;
+                } 
+                if (e.target.closest('.line-handle') || (targetEl && targetEl.classList.contains('garden-line'))) {
+                    startMoveOrResizeLine(e);
+                    return;
+                } 
+
+                // 2. Démarrer le dessin d'un nouvel élément
+                isDrawing = true;
+                const rect = canvas.getBoundingClientRect();
+                startX = e.clientX - rect.left;
+                startY = e.clientY - rect.top;
+                
+                if (appState.drawMode === 'bed') {
+                    // Pour la planche (rectangle fantôme)
+                    ghostRect.style.left = `${startX}px`;
+                    ghostRect.style.top = `${startY}px`;
+                    ghostRect.style.width = '0px';
+                    ghostRect.style.height = '0px';
+                    ghostRect.style.display = 'block';
+                    ghostRect.style.borderColor = 'rgba(255, 255, 255, 0.8)';
+                    ghostRect.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+                } else if (appState.drawMode === 'line') {
+                     // Pour la ligne, pas de rectangle fantôme, mais on prépare
+                }
+            });
+
+            // MOUVEMENT ET REDIMENSIONNEMENT : Mousemove
+            canvas.addEventListener('mousemove', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const currentX = e.clientX - rect.left;
+                const currentY = e.clientY - rect.top;
+                
+                if (isResizing) {
+                    performResizeBed(currentX, currentY);
+                } else if (isMovingLine) {
+                    performMoveOrResizeLine(currentX, currentY);
+                } else if (isDrawing && appState.drawMode === 'bed') {
+                    // Dessin de planche
+                    const width = Math.abs(currentX - startX);
+                    const height = Math.abs(currentY - startY);
+                    const posX = Math.min(startX, currentX);
+                    const posY = Math.min(startY, currentY);
+                    ghostRect.style.left = `${posX}px`;
+                    ghostRect.style.top = `${posY}px`;
+                    ghostRect.style.width = `${width}px`;
+                    ghostRect.style.height = `${height}px`;
+                }
+            });
+
+            // FIN : Mouseup
+            canvas.addEventListener('mouseup', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const finalX = e.clientX - rect.left;
+                const finalY = e.clientY - rect.top;
+
+                if (isDrawing) {
+                    isDrawing = false;
+                    ghostRect.style.display = 'none';
+
+                    if (appState.drawMode === 'bed') {
+                        const finalW = Math.abs(finalX - startX);
+                        const finalH = Math.abs(finalY - startY);
+                        const posX = Math.min(startX, finalX);
+                        const posY = Math.min(startY, finalY);
+                        if(finalW < 30 || finalH < 30) return;
+                        createBed(posX, posY, finalW, finalH);
+                    } else if (appState.drawMode === 'line') {
+                        // Tracé de ligne
+                        const distance = generateDistance(startX, startY, finalX, finalY);
+                        if (distance > 10) { // Longueur minimale de 10px pour une ligne
+                             createLine(startX, startY, finalX, finalY);
+                        }
+                    }
+                }
+                
+                if (isResizing || isMovingLine) {
+                    if (activeElement) {
+                        activeElement.locationKey = getLocationKey(activeElement);
+                        saveData();
+                    }
+                    isResizing = false;
+                    isMovingLine = false;
+                    activeElement = null;
+                    resizeHandleType = '';
+                    render(); 
+                }
+            });
+        }
+        
+        function setDrawMode(mode) {
+             appState.drawMode = mode;
+             toggleDrawModeBtn.classList.remove('active');
+             toggleDrawModeBarrierBtn.classList.remove('active');
+             
+             if (mode === 'bed') {
+                 toggleDrawModeBtn.classList.add('active');
+             } else { // 'line'
+                 toggleDrawModeBarrierBtn.classList.add('active');
+             }
+        }
+        
+        // --- LOGIQUE METIER (Sauvegardes / Rotations) ---
+
+        function saveModification() {
+            const bed = appState.allBeds.find(b => b.id === parseInt(modalBedId.value) && b.type === 'bed');
+            if (bed) {
+                const isJachere = modalIsJachere.checked;
+                
+                bed.name = modalName.value.trim();
+                bed.isJachere = isJachere; 
+                bed.variety = modalVariety.value.trim();
+
+                // Gestion de la famille pour la rotation
+                bed.family = isJachere ? JACHERE_FAMILY_KEY : modalFamily.value; 
+                
+                bed.color = modalColor.value;
+                if (isJachere) {
+                    bed.name = bed.name || 'Jachère/Engrais Vert';
+                    bed.icon = ICON_MAP['Jachère'];
+                } else {
+                    bed.icon = modalIconValue.value;
+                }
+                
+                bed.plantingDate = modalPlantingDate.value;
+                bed.harvestDate = modalHarvestDate.value;
+                bed.stage = modalStage.value; 
+                bed.notes = modalNotes.value.trim();
+                bed.seeds_plants = modalSeedsPlants.value;
+                bed.harvested_quantity = modalHarvestedQuantity.value;
+                bed.unit = modalUnit.value;
+                bed.locationKey = getLocationKey(bed); 
+                
+                saveData();
+                render();
+                closeModal(); 
+            }
+        }
+        
+        function saveBarrierModification() {
+            const line = appState.allBeds.find(b => b.id === parseInt(modalBarrierId.value) && b.type === 'line');
+            if (line) {
+                line.name = modalBarrierName.value.trim();
+                // La locationKey est mise à jour après le déplacement/redimensionnement
+                saveData();
+                render();
+                closeBarrierModal();
+            }
+        }
+        
+        function deleteBed() {
+            if (confirm("Êtes-vous sûr de vouloir supprimer cette planche de culture ?")) {
+                const bedId = parseInt(modalBedId.value);
+                appState.allBeds = appState.allBeds.filter(b => b.id !== bedId);
+                saveData();
+                render();
+                closeModal();
+            }
+        }
+        
+        function deleteBarrier() {
+            if (confirm("Êtes-vous sûr de vouloir supprimer cette barrière/allée ?")) {
+                const barrierId = parseInt(modalBarrierId.value);
+                appState.allBeds = appState.allBeds.filter(b => b.id !== barrierId);
+                saveData();
+                render();
+                closeBarrierModal();
+            }
+        }
+        
+        /**
+         * Archive la culture actuelle et crée une nouvelle entrée pour la nouvelle culture/jachère.
+         */
+        function addNewCulture() {
+            const bed = appState.allBeds.find(b => b.id === parseInt(modalBedId.value) && b.type === 'bed');
+            
+            if (bed && confirm(`Confirmez-vous la création d'une NOUVELLE culture sur cet emplacement ? (La culture actuelle sera archivée.)`)) {
+                
+                const today = new Date().toISOString().split('T')[0];
+                
+                // Si la date d'arrachage n'est pas définie, on la force à aujourd'hui avant d'archiver
+                if (!bed.harvestDate) {
+                    modalHarvestDate.value = today;
+                }
+                
+                saveModification(); // Archivage de l'ancienne culture
+                
+                const isJachereNew = confirm("🌱 Voulez-vous que la prochaine étape soit une jachère active/un engrais vert ?");
+                
+                const newBed = {
+                    id: Date.now(),
+                    type: 'bed', 
+                    x: bed.x, 
+                    y: bed.y, 
+                    w: bed.w, 
+                    h: bed.h, 
+                    locationKey: bed.locationKey, 
+
+                    name: isJachereNew ? 'Jachère/Engrais Vert' : '', 
+                    variety: '', 
+                    // Si Jachère est choisie, on force les bonnes valeurs
+                    family: isJachereNew ? JACHERE_FAMILY_KEY : '',
+                    isJachere: isJachereNew, 
+                    color: isJachereNew ? '#A4C6A4' : '#4CAF50', 
+                    icon: isJachereNew ? ICON_MAP['Jachère'] : 'ri-seedling-line', 
+                    
+                    plantingDate: today,
+                    harvestDate: '', 
+                    stage: CROP_STAGES[0], 
+                    notes: 'Début de la nouvelle culture.',
+                    seeds_plants: '', 
+                    harvested_quantity: '', 
+                    unit: HARVEST_UNITS[0] 
+                };
+                
+                appState.allBeds.push(newBed);
+                saveData();
+                render();
+                openModal(newBed); // Ouvre la modale sur la nouvelle culture/jachère
+            }
+        }
+        
+        function renderRotationAdvice(locationKey) {
+            const history = appState.allBeds
+                .filter(b => b.locationKey === locationKey && b.type === 'bed')
+                .sort((a, b) => new Date(b.plantingDate) - new Date(a.plantingDate));
+            
+            adviceContent.innerHTML = '';
+
+            if (!locationKey) {
+                adviceContent.innerHTML = '<p>Sélectionnez une planche pour afficher les conseils de rotation.</p>';
+                return;
+            }
+
+            if (history.length === 0) {
+                adviceContent.innerHTML = '<p class="advice-ok">Aucun historique. Vous pouvez planter ce que vous voulez !</p>';
+                return;
+            }
+            
+            const lastFamily = history[0].isJachere ? JACHERE_FAMILY_KEY : normalizeFamily(history[0].family);
+            
+            const familiesHistory = history.slice(0, 4) // On ne regarde que les 4 dernières rotations
+                .map(item => item.isJachere ? JACHERE_FAMILY_KEY : normalizeFamily(item.family))
+                .filter(f => f && f !== 'Autre' && f !== JACHERE_FAMILY_KEY); // On ignore les "Autre" et les jachères pour le comptage strict
+
+            adviceContent.innerHTML += `<p>Dernière culture: **${lastFamily}**</p>`;
+
+            // Règle 1: Éviter les familles de la rotation précédente
+            const avoidFamilies = ROTATION_RULES[lastFamily] ? ROTATION_RULES[lastFamily].avoid : [];
+            if (avoidFamilies.length > 0) {
+                 adviceContent.innerHTML += `<div class="advice-danger advice-item">❌ **À ÉVITER :** ${avoidFamilies.join(', ')} (Rotation immédiate non recommandée)</div>`;
+            }
+
+            // Règle 2: Encourager les familles recommandées
+            const followFamilies = ROTATION_RULES[lastFamily] ? ROTATION_RULES[lastFamily].follow : [];
+            if (followFamilies.length > 0) {
+                 adviceContent.innerHTML += `<div class="advice-ok advice-item">✅ **RECOMMANDÉ :** ${followFamilies.join(', ')} (Bonnes successions)</div>`;
+            }
+
+            // Règle 3: Règle des 4 ans
+            const familyCounts = familiesHistory.reduce((acc, family) => {
+                acc[family] = (acc[family] || 0) + 1;
+                return acc;
+            }, {});
+
+            Object.entries(familyCounts).forEach(([family, count]) => {
+                if (count > 1) {
+                    adviceContent.innerHTML += `<div class="advice-warning advice-item">⚠️ **ALERTE 4 ANS :** La famille ${family} est apparue ${count} fois dans les 4 dernières rotations. Une pause d'au moins 3 ans est recommandée.</div>`;
+                }
+            });
+            
+             // Ajouter un bouton pour mettre la planche en jachère
+             adviceContent.innerHTML += `<button onclick="proposeJachere('${locationKey}')" style="margin-top: 10px; padding: 8px 15px; background: var(--primary-green); color: white; border: none; border-radius: 4px; cursor: pointer;">Proposer Jachère</button>`;
+        }
+        
+        /**
+         * Archive la culture actuelle (si présente) et crée immédiatement une nouvelle entrée "Jachère".
+         */
+        function proposeJachere(locationKey) {
+            const latestBed = appState.allBeds
+                .filter(b => b.locationKey === locationKey && b.type === 'bed')
+                .sort((a, b) => new Date(b.plantingDate) - new Date(a.plantingDate))[0];
+                
+            const today = new Date().toISOString().split('T')[0];
+                
+            if (latestBed) {
+                 // 1. Archiver l'ancienne culture si elle n'est pas déjà récoltée
+                 if (!latestBed.harvestDate) {
+                     latestBed.harvestDate = today;
+                     saveData(); 
+                 }
+            }
+                 
+            // 2. Créer la nouvelle entrée Jachère
+            const newBed = {
+                id: Date.now(),
+                type: 'bed', 
+                x: latestBed ? latestBed.x : 0, 
+                y: latestBed ? latestBed.y : 0, 
+                w: latestBed ? latestBed.w : 50, 
+                h: latestBed ? latestBed.h : 50, 
+                locationKey: latestBed ? latestBed.locationKey : `${0}_${0}_${50}_${50}_bed`, 
+
+                name: 'Jachère/Engrais Vert', 
+                variety: '', 
+                family: JACHERE_FAMILY_KEY,
+                isJachere: true, 
+                color: '#A4C6A4', 
+                icon: ICON_MAP['Jachère'], 
+                
+                plantingDate: today,
+                harvestDate: '', 
+                stage: CROP_STAGES[0], 
+                notes: 'Initiée après recommandation de rotation.',
+                seeds_plants: '', 
+                harvested_quantity: '', 
+                unit: HARVEST_UNITS[0] 
+            };
+            
+            appState.allBeds.push(newBed);
+            saveData();
+            render();
+            
+            // 3. Ouvre la modale sur la nouvelle planche Jachère pour la configurer (ex: date de fin)
+            openModal(newBed); 
+        }
+        
+        function renderCalendar() {
+            calendarList.innerHTML = '';
+            
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const futureEvents = appState.allBeds
+                .filter(b => b.type === 'bed' && b.harvestDate) // On ne veut que les planches qui ont une date de récolte *prévue*
+                .map(b => ({
+                    date: new Date(b.harvestDate),
+                    name: b.name,
+                    family: b.isJachere ? JACHERE_FAMILY_KEY : normalizeFamily(b.family),
+                    w: b.w,
+                    h: b.h,
+                    locationKey: b.locationKey,
+                    stage: b.stage
+                }))
+                .filter(e => e.date.getTime() >= today.getTime()) // Seulement les événements futurs ou d'aujourd'hui
+                .sort((a, b) => a.date - b.date)
+                .slice(0, 5); // Afficher les 5 prochains événements
+
+            if (futureEvents.length === 0) {
+                calendarList.innerHTML = '<li class="calendar-item">Aucune récolte ou fin de culture prévue bientôt.</li>';
+                return;
+            }
+
+            futureEvents.forEach(event => {
+                const li = document.createElement('li');
+                li.className = 'calendar-item';
+                
+                const daysUntil = Math.ceil((event.date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                const color = daysUntil < 30 ? 'var(--color-red)' : daysUntil < 90 ? 'var(--color-yellow)' : 'var(--primary-green)';
+
+                li.innerHTML = `
+                    <strong style="color: ${color};">${event.name} (${event.family}) - Fin prévue</strong>
+                    <span>**Date:** ${formatDate(event.date.toISOString().split('T')[0])} (${daysUntil} jours)</span>
+                    <span>**Emplacement:** ${event.w} x ${event.h} px</span>
+                    <small>Prévoir l'arrachage et la succession de culture.</small>
+                `;
+                calendarList.appendChild(li);
+            });
+        }
+        
+        function renderGlobalStats() {
+            statsSummary.innerHTML = '';
+            
+            const filterDateString = dateFilter.value;
+            const selectedDate = filterDateString ? new Date(filterDateString) : new Date();
+            selectedDate.setHours(0, 0, 0, 0);
+
+            // Filtrer les planches actives à la date sélectionnée
+            const activeBeds = appState.allBeds.filter(b => {
+                if (b.type !== 'bed') return false;
+                
+                const planting = b.plantingDate ? new Date(b.plantingDate) : null;
+                if (planting) planting.setHours(0, 0, 0, 0);
+                
+                const harvest = b.harvestDate ? new Date(b.harvestDate) : null;
+                if (harvest) harvest.setHours(0, 0, 0, 0);
+
+                const planted = planting && planting.getTime() <= selectedDate.getTime();
+                const notHarvested = !harvest || harvest.getTime() > selectedDate.getTime();
+                
+                return planted && notHarvested;
+            });
+
+            // Calculer la surface totale
+            const totalArea = activeBeds.reduce((sum, b) => sum + (b.w * b.h), 0);
+            
+            // Compter par famille
+            const familyCount = activeBeds.reduce((acc, b) => {
+                const family = b.isJachere ? JACHERE_FAMILY_KEY : normalizeFamily(b.family);
+                acc[family] = (acc[family] || { count: 0, area: 0 });
+                acc[family].count++;
+                acc[family].area += (b.w * b.h);
+                return acc;
+            }, {});
+            
+            // Déterminer la famille la plus présente
+            let maxFamily = { name: 'Aucune', area: 0 };
+            Object.entries(familyCount).forEach(([name, data]) => {
+                if (data.area > maxFamily.area) {
+                    maxFamily.name = name;
+                    maxFamily.area = data.area;
+                }
+            });
+            
+            // Statistiques par familles (pour la barre d'info)
+            const topFamilyDisplay = activeBeds.length > 0 
+                ? `${maxFamily.name} (${((maxFamily.area / totalArea) * 100).toFixed(0)}%)` 
+                : 'N/A';
+                
+            // Nombre de barrières / lignes
+            const lineCount = appState.allBeds.filter(b => b.type === 'line').length;
+
+            statsSummary.innerHTML = `
+                <div class="stat-card">
+                    <strong>${activeBeds.length}</strong>
+                    <small>Planches Actives</small>
+                </div>
+                <div class="stat-card">
+                    <strong>${totalArea.toFixed(0)} px²</strong>
+                    <small>Surface Cultivée Totale</small>
+                </div>
+                <div class="stat-card">
+                    <strong>${topFamilyDisplay}</strong>
+                    <small>Famille Majoritaire</small>
+                </div>
+                 <div class="stat-card">
+                    <strong>${lineCount}</strong>
+                    <small>Barrières/Allées</small>
+                </div>
+            `;
+        }
+
+        // --- RENDU (AFFICHAGE) ---
+        
+        // Fonction utilitaire pour calculer la transformation d'une ligne
+        function calculateLineStyle(x1, y1, x2, y2) {
+            const length = generateDistance(x1, y1, x2, y2);
+            const angle = Math.atan2(y2 - y1, x2 - x1) * (180 / Math.PI);
+            return { length, angle };
+        }
+        
+        // Mise à jour visuelle d'une ligne (utilisée dans move/resize et render)
+        function updateLineElement(line) {
+             const { x: x1, y: y1 } = line.points[0];
+             const { x: x2, y: y2 } = line.points[1];
+             const { length, angle } = calculateLineStyle(x1, y1, x2, y2);
+
+             const lineEl = document.querySelector(`.garden-element[data-bed-id="${line.id}"]`);
+             if (lineEl) {
+                 lineEl.style.left = `${x1}px`;
+                 lineEl.style.top = `${y1}px`;
+                 lineEl.style.width = `${length}px`;
+                 lineEl.style.transform = `rotate(${angle}deg)`;
+                 const nameSpan = lineEl.querySelector('.line-name');
+                 if (nameSpan) nameSpan.textContent = `${line.name} (${length.toFixed(1)} px)`;
+             }
+        }
+
+        function render() {
+            renderGlobalStats();
+
+            const existingElements = canvas.querySelectorAll('.garden-element');
+            existingElements.forEach(el => el.remove());
+
+            const filterDateString = dateFilter.value;
+            const selectedDate = filterDateString ? new Date(filterDateString) : null;
+            let filterDateNormalized = null;
+            if (selectedDate) {
+                filterDateNormalized = new Date(selectedDate);
+                filterDateNormalized.setHours(0, 0, 0, 0);
+            }
+
+            appState.allBeds.forEach(element => {
+                
+                if (element.type === 'bed') {
+                    
+                    let shouldDraw = true;
+                    if (filterDateNormalized) {
+                        const plantingDate = element.plantingDate ? new Date(element.plantingDate) : null;
+                        if (plantingDate) plantingDate.setHours(0, 0, 0, 0);
+
+                        const harvestDate = element.harvestDate ? new Date(element.harvestDate) : null;
+                        if (harvestDate) harvestDate.setHours(0, 0, 0, 0);
+
+                        if (!plantingDate || plantingDate.getTime() > filterDateNormalized.getTime()) {
+                            shouldDraw = false; 
+                        }
+                        if (harvestDate && harvestDate.getTime() <= filterDateNormalized.getTime()) {
+                            shouldDraw = false; 
+                        }
+                    } else {
+                        // Pas de filtre: n'afficher que les cultures actives (non récoltées)
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        const harvestDate = element.harvestDate ? new Date(element.harvestDate) : null;
+                        if (harvestDate && harvestDate.getTime() < today.getTime()) {
+                             shouldDraw = false; 
+                        }
+                    }
+
+                    if (shouldDraw) {
+                        drawBed(element);
+                    }
+                } 
+                else if (element.type === 'line') {
+                    drawLine(element);
+                }
+            });
+            
+            renderCalendar(); 
+            renderRotationAdvice(null); // Réinitialiser le conseil
+        }
+        
+        // --- FONCTIONS DE CRÉATION D'ÉLÉMENTS ---
+
+        function createBed(x, y, w, h) {
+            const name = prompt("🌱 Qu'allez-vous cultiver ici ? (Laissez vide pour Jachère)") || '';
+            const isJachere = (name.trim() === "");
+            
+            const finalName = isJachere ? 'Jachère/Engrais Vert' : name.trim();
+            const finalFamily = isJachere ? JACHERE_FAMILY_KEY : (modalFamily.value || '');
+            const finalColor = isJachere ? '#A4C6A4' : (modalColor.value || '#4CAF50');
+            const finalIcon = isJachere ? ICON_MAP['Jachère'] : (modalIconValue.value || 'ri-seedling-line');
+
+            const today = new Date().toISOString().split('T')[0];
+            const defaultStage = CROP_STAGES[0]; 
+
+            const newBed = {
+                id: Date.now(),
+                type: 'bed',
+                x: x, y: y, w: w, h: h,
+                locationKey: `${x}_${y}_${w}_${h}_bed`,
+                name: finalName,
+                isJachere: isJachere,
+                variety: '', 
+                family: finalFamily,
+                color: finalColor,
+                icon: finalIcon, 
+                
+                plantingDate: today,
+                harvestDate: '', 
+                stage: defaultStage, 
+                notes: '',
+                seeds_plants: '', 
+                harvested_quantity: '', 
+                unit: HARVEST_UNITS[0] 
+            };
+            appState.allBeds.push(newBed);
+            saveData();
+            render();
+            openModal(newBed); // Ouvre la modale pour la configuration
+        }
+        
+        function createLine(x1, y1, x2, y2) {
+            const name = prompt("🚧 Nommez cette ligne (Allée, Irrigation, Bordure) :") || "Allée";
+            if (name) {
+                const newLine = {
+                    id: Date.now(),
+                    type: 'line',
+                    points: [{x: x1, y: y1}, {x: x2, y: y2}],
+                    locationKey: getLocationKey({type: 'line', points: [{x: x1, y: y1}, {x: x2, y: y2}]}),
+                    name: name.trim(),
+                };
+                appState.allBeds.push(newLine); 
+                saveData();
+                render();
+                openBarrierModal(newLine); // Ouvre la modale pour la configuration
+            }
+        }
+        
+        function drawLine(line) {
+            const lineEl = document.createElement('div');
+            lineEl.className = 'garden-element garden-line';
+            lineEl.dataset.bedId = line.id; 
+            lineEl.dataset.locationKey = getLocationKey(line); 
+            
+            const { length, angle } = calculateLineStyle(line.points[0].x, line.points[0].y, line.points[1].x, line.points[1].y);
+            
+            lineEl.innerHTML = `
+                <span class="line-name">${line.name} (${length.toFixed(1)} px)</span>
+                <div class="line-handle start"></div>
+                <div class="line-handle end"></div>
+            `;
+            
+            lineEl.style.left = `${line.points[0].x}px`;
+            lineEl.style.top = `${line.points[0].y}px`;
+            lineEl.style.width = `${length}px`;
+            lineEl.style.transform = `rotate(${angle}deg)`;
+            
+            lineEl.addEventListener('dblclick', (e) => {
+                e.stopPropagation(); 
+                openBarrierModal(line);
+            });
+            
+            canvas.appendChild(lineEl);
+        }
+
+        function drawBed(bed) {
+            const bedEl = document.createElement('div');
+            // Ajout de la classe is-jachere si l'option est cochée
+            bedEl.className = `garden-element garden-bed ${bed.isJachere ? 'is-jachere' : ''}`;
+            bedEl.dataset.bedId = bed.id; 
+            bedEl.dataset.locationKey = getLocationKey(bed); 
+            
+            const bedFamily = bed.isJachere ? JACHERE_FAMILY_KEY : (bed.family && bed.family !== '' ? bed.family : 'N/A');
+            const varietyDisplay = bed.variety ? `(${bed.variety})` : '';
+            
+            let quantityDisplay = '';
+            if (bed.seeds_plants && bed.seeds_plants > 0) {
+                quantityDisplay = `<span class="bed-quantity">Qté: ${bed.seeds_plants}</span>`;
+            }
+            
+            const stageDisplay = bed.stage ? `<span class="bed-stage">${bed.stage}</span>` : '';
+
+
+            bedEl.innerHTML = `
+                <div class="bed-content" style="background-color: ${bed.isJachere ? 'transparent' : bed.color};">
+                    <i class="${bed.icon || 'ri-seedling-line'} bed-icon"></i>
+                    <span class="bed-name">${bed.name} ${varietyDisplay}</span>
+                    <span class="bed-family">${bed.isJachere ? 'JACHÈRE (Améliorante)' : bedFamily}</span>
+                    ${quantityDisplay}
+                    ${stageDisplay} 
+                    <span class="bed-dimensions">${bed.w} x ${bed.h} px</span>
+                </div>
+                <div class="resizer top-left"></div>
+                <div class="resizer top-right"></div>
+                <div class="resizer bottom-left"></div>
+                <div class="resizer bottom-right"></div>
+            `;
+            
+            bedEl.style.backgroundColor = bed.isJachere ? bed.color : bed.color; 
+            bedEl.style.left = `${bed.x}px`;
+            bedEl.style.top = `${bed.y}px`;
+            bedEl.style.width = `${bed.w}px`;
+            bedEl.style.height = `${bed.h}px`;
+
+            // Ajout de l'écouteur d'événement pour le clic et double-clic
+            bedEl.addEventListener('click', (e) => {
+                if (isResizing || e.target.classList.contains('resizer')) {
+                     e.stopPropagation();
+                     return;
+                }
+                
+                if (clickTimeout !== null) {
+                    clearTimeout(clickTimeout);
+                    clickTimeout = null;
+                    openModal(bed); // Double-clic
+                    return;
+                }
+                
+                clickTimeout = setTimeout(() => {
+                    if (clickTimeout !== null) {
+                        openHistoryModal(bed); // Simple clic
+                        renderRotationAdvice(bedEl.dataset.locationKey);
+                        clickTimeout = null;
+                    }
+                }, 250);
+                
+                e.stopPropagation();
+            });
+            
+            // Pour être sûr, on ajoute aussi le dblclick direct au cas où le timeout ne fonctionne pas
+            bedEl.addEventListener('dblclick', (e) => {
+                e.stopPropagation(); 
+                clearTimeout(clickTimeout);
+                clickTimeout = null;
+                openModal(bed);
+            });
+
+
+            canvas.appendChild(bedEl);
+        }
+
+        // --- LOGIQUE DE REDIMENSIONNEMENT DES PLANCHES (BED) ---
+        function startResizeBed(e) {
+            isResizing = true;
+            e.stopPropagation(); 
+            const elementEl = e.target.closest('.garden-element');
+            const elementId = parseInt(elementEl.dataset.bedId);
+            activeElement = appState.allBeds.find(b => b.id === elementId && b.type === 'bed');
+            
+            const rect = canvas.getBoundingClientRect();
+            startX = e.clientX - rect.left;
+            startY = e.clientY - rect.top;
+            
+            activeElement.initialX = activeElement.x;
+            activeElement.initialY = activeElement.y;
+            activeElement.initialW = activeElement.w;
+            activeElement.initialH = activeElement.h;
+            
+            resizeHandleType = e.target.className.split(' ').find(cls => cls.includes('-')).replace('resizer', '').trim();
+        }
+
+        function performResizeBed(currentX, currentY) {
+            if (!activeElement || activeElement.type !== 'bed') return;
+            const dx = currentX - startX;
+            const dy = currentY - startY;
+            let newX = activeElement.initialX;
+            let newY = activeElement.initialY;
+            let newW = activeElement.initialW;
+            let newH = activeElement.initialH;
+            
+            // Logique de redimensionnement
+            if (resizeHandleType.includes('right')) { newW = Math.max(30, activeElement.initialW + dx); }
+            if (resizeHandleType.includes('left')) { newW = Math.max(30, activeElement.initialW - dx); if (newW > 30) { newX = activeElement.initialX + dx; } }
+            if (resizeHandleType.includes('bottom')) { newH = Math.max(30, activeElement.initialH + dy); }
+            if (resizeHandleType.includes('top')) { newH = Math.max(30, activeElement.initialH - dy); if (newH > 30) { newY = activeElement.initialY + dy; } }
+            
+            activeElement.x = newX;
+            activeElement.y = newY;
+            activeElement.w = newW;
+            activeElement.h = newH;
+            
+            const elementEl = document.querySelector(`.garden-element[data-bed-id="${activeElement.id}"]`);
+            if (elementEl) {
+                elementEl.style.left = `${newX}px`;
+                elementEl.style.top = `${newY}px`;
+                elementEl.style.width = `${newW}px`;
+                elementEl.style.height = `${newH}px`;
+                const dimSpan = elementEl.querySelector('.bed-dimensions');
+                if(dimSpan) dimSpan.textContent = `${newW} x ${newH} px`;
+            }
+        }
+        
+        // --- LOGIQUE DE DÉPLACEMENT/REDIMENSIONNEMENT DES LIGNES ---
+        function startMoveOrResizeLine(e) {
+            isMovingLine = true;
+            e.stopPropagation();
+            const elementEl = e.target.closest('.garden-element');
+            const elementId = parseInt(elementEl.dataset.bedId);
+            activeElement = appState.allBeds.find(b => b.id === elementId && b.type === 'line');
+
+            const rect = canvas.getBoundingClientRect();
+            startX = e.clientX - rect.left;
+            startY = e.clientY - rect.top;
+            
+            activeElement.initialP0 = { ...activeElement.points[0] };
+            activeElement.initialP1 = { ...activeElement.points[1] };
+            
+            // Détermine si on resize (poignée) ou déplace (corps de la ligne)
+            if (e.target.classList.contains('line-handle')) {
+                 resizeHandleType = e.target.classList.contains('start') ? 'start' : 'end';
+            } else {
+                 resizeHandleType = 'move';
+            }
+        }
+
+        function performMoveOrResizeLine(currentX, currentY) {
+            if (!activeElement || activeElement.type !== 'line') return;
+            const dx = currentX - startX;
+            const dy = currentY - startY;
+
+            if (resizeHandleType === 'move') {
+                // Déplacement complet de la ligne
+                activeElement.points[0].x = activeElement.initialP0.x + dx;
+                activeElement.points[0].y = activeElement.initialP0.y + dy;
+                activeElement.points[1].x = activeElement.initialP1.x + dx;
+                activeElement.points[1].y = activeElement.initialP1.y + dy;
+            } else {
+                // Redimensionnement à partir d'une extrémité
+                const targetPointIndex = resizeHandleType === 'start' ? 0 : 1;
+                const initialPoint = targetPointIndex === 0 ? activeElement.initialP0 : activeElement.initialP1;
+                
+                activeElement.points[targetPointIndex].x = initialPoint.x + dx;
+                activeElement.points[targetPointIndex].y = initialPoint.y + dy;
+            }
+            // Mise à jour visuelle (sans re-rendu complet pour la fluidité)
+            updateLineElement(activeElement);
+        }
+
+        // Lancement au chargement de la page
+        init();
+    </script>
+</body>
+</html>
